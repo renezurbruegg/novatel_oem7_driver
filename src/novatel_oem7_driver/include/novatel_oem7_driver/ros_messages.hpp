@@ -39,8 +39,10 @@ namespace novatel_oem7_driver
       const std::string& frame_id,
       boost::shared_ptr<T>& msg)
   {
+    if (msg->header.frame_id != "keepTime")
+      msg->header.stamp    = ros::Time::now();
+      
     msg->header.frame_id = frame_id;
-    msg->header.stamp    = ros::Time::now();
     msg->header.seq      = GetNextMsgSequenceNumber();
   }
 }

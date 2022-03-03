@@ -22,6 +22,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#define GPS_TO_UTC_MSECS_DIFF 18
+#define GPS_TIMESTAMP_START 315964800.0
+
+
 #include <novatel_oem7_driver/oem7_message_handler_if.hpp>
 
 #include <ros/ros.h>
@@ -194,7 +198,14 @@ namespace novatel_oem7_driver
 
       imu->angular_velocity_covariance[0]    = DATA_NOT_AVAILABLE;
       imu->linear_acceleration_covariance[0] = DATA_NOT_AVAILABLE;
-
+      if (inspva_) {
+        constexpr int WEEKS_TO_SECONDS =  7 * 24 * 60 * 60;
+        // Set timestamp to gps timestamp and not received timestamp.
+        double ts = GPS_TIMESTAMP_START + WEEKS_TO_SECONDS * inspva_->nov_header.gps_week_number + inspva_->nov_header.gps_week_milliseconds / 1000.0  - GPS_TO_UTC_MSECS_DIFF;
+        imu->header.stamp.sec = (int) ts;
+        imu->header.stamp.nsec =  (int) ((ts - imu->header.stamp.sec) * 1000000000);
+        imu->header.frame_id = "keepTime";
+      }
       imu_pub_.publish(imu);
     }
 

@@ -23,6 +23,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+#define GPS_TO_UTC_MSECS_DIFF 18
+#define GPS_TIMESTAMP_START 315964800.0
+#define GPS_UTM_ZONE "U"
+
 #include <novatel_oem7_driver/oem7_message_handler_if.hpp>
 #include <oem7_driver_util.hpp>
 
@@ -330,7 +334,7 @@ namespace novatel_oem7_driver
   {
     pt.z = hgt;
 
-    std::string zone; //unused
+    std::string zone = GPS_UTM_ZONE;
     gps_common::LLtoUTM(lat, lon, pt.y, pt.x, zone);
   }
 
@@ -756,6 +760,13 @@ namespace novatel_oem7_driver
 
         odometry->pose.pose.orientation = tf2::toMsg(ros_orientation);
         tf2::convert(local_frame_velocity, odometry->twist.twist.linear);
+
+        constexpr int WEEKS_TO_SECONDS =  7 * 24 * 60 * 60;
+        // Set timestamp to gps timestamp and not received timestamp.
+        double ts = GPS_TIMESTAMP_START + WEEKS_TO_SECONDS * inspva_->nov_header.gps_week_number + inspva_->nov_header.gps_week_milliseconds / 1000.0  - GPS_TO_UTC_MSECS_DIFF;
+        odometry->header.stamp.sec = (uint32_t) ts;
+        odometry->header.stamp.nsec =  (uint32_t) ((ts - odometry->header.stamp.sec) * 1000000000);
+        odometry->header.frame_id = "keepTime";
       } // inspva_
 
 
